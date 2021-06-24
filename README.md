@@ -1,39 +1,50 @@
 # JWT service using Ethereum / ENS identities
 
 A goland API that implements a challenge/response mechanism in order to 
-issue JWTs using Ethereum identities. It also (optionally) supports ETH to ENS 
-resolution for users that have registered an ENS name.
+issue JWTs using Ethereum identities.
+
+The Openhouse team has modified this API to issue JWTs signed with HS256 so that
+they can be used in authentication with a Jitsi server.
 
 ## Install
 
 ```bash
-$ go get github.com/deiu/eth-auth
+$ go get github.com/openhouse-project/eth-auth
 ```
 
 ## Starting the server
 
 The server needs the following ENV variables to be set before running:
-* `INFURA_API_URL` - [optional] the Infura API URL for ENS resolution
-* `INFURA_API_KEY` - [optional] the Infura API key for ENS resolution
+
 * `ORIGINS` - list of allowed Origins separated by space (your client app URL)
-* `ETH_PRIVKEY` - a private Ethereum key that is used to sign the JWTs (in hexa)
+* `ETH_PRIVKEY` - a private key that is used to sign the JWTs. This should be shared with your Jitsi server.
 * `LOGGING` - whether to log requests to stdout
 
 Example of how to start the server:
 
 ```bash
-$ export INFURA_API_URL="https://rinkeby.infura.io/v3/"
-$ export INFURA_API_KEY="2702729979....de7a92e689bfff"
 $ export ORIGINS="http://localhost:8888 https://example.org"
 $ export ETH_PRIVKEY="your-exported-eth-key-in-hexa"
 $ export LOGGING="true"
 $ go run server.go
 ```
 
-**Important!** The Infura API URL should match the network used by the client
-app. In the example above, it is set to `Rinkeby`, which means that the client
-app should make sure to tell users to set their MetaMask (or similar providers)
-current network to `Rinkeby` as well.
+## Jitsi server configuration
+
+If you configure Jitsi using the [Docker instructions](https://jitsi.github.io/handbook/docs/devops-guide/devops-guide-docker#lets-encrypt-configuration), there are a few variables in the
+.env file you will need to modify. This is a checklist so you don't miss anything;
+many of these are unrelated to this auth server:
+
+* ENABLE_LETSENCRYPT if you want to call Jitsi with https
+* LETSENCRYPT_DOMAIN
+* LETSENCRYPT_EMAIL
+* ENABLE_HTTP_REDIRECT is also for LetsEncrypt
+* ENABLE_AUTH to enable authentication at all
+* ENABLE_GUESTS - leave uncommented to require JWTs
+* AUTH_TYPE=jwt
+* JWT_APP_ID=openhouse_client (or change to your app ID configured in auth.go)
+* JWT_APP_SECRET={put your shared secret here, the same as `ETH_PRIVKEY` above}
+
 
 ## How to use the API
 
@@ -54,7 +65,7 @@ Response:
 ```js
 {
   address: "0x91ff16a5ffb07e2f58600afc6ff9c1c32ded1f81",
-  challenge: "To prove your identity, please sign this one-time nonce: JiqPLBbLBdCfWZoS"
+  challenge: "JiqPLBbLBdCfWZoS"
 }
 ```
 
@@ -81,9 +92,6 @@ Response:
 }
 ```
 
-**Note:** if you have registered an ENS name for your Ethereum address, the `user`
-attribute will return the ENS name instead of a plain Ethereum address.
-
 ### Refreshing a JWT before expiration
 
 Clients can obtain a new token as they get closer to the expiration time,
@@ -105,9 +113,6 @@ Response:
   user: "0x350F72a69D....67C2EBE98dA"
 }
 ```
-
-If you want to see a full example check out the `test-client` directory from this
-repo for a small client app in JavaScript, which uses Metamask as the Ethereum provider.
 
 
 
