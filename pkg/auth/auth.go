@@ -15,19 +15,23 @@ var (
 // provided secret
 func NewJWT(user string, expTime int64, hexKey string) (string, error) {
 	// Create token
-	token := jwt.New(jwt.SigningMethodES256)
+	token := jwt.New(jwt.SigningMethodHS256)
+	context := jwt.MapClaims{}
+	userContext := jwt.MapClaims{}
+	userContext["name"] = user
+	context["user"] = user
 
 	// Set claims
 	claims := token.Claims.(jwt.MapClaims)
-	claims["name"] = user
+	claims["aud"] = "jitsi"
+	claims["iss"] = "openhouse_client"
+	claims["sub"] = "localhost:3000"
+	claims["room"] = "*"
 	claims["exp"] = expTime
+	claims["nbf"] = time.Date(2021, 01, 01, 12, 0, 0, 0, time.UTC).Unix()
+	claims["context"] = context
 
-	// Generate encoded token and send it as response.
-	key, err := ParseHexKey(hexKey)
-	if err != nil {
-		return "", err
-	}
-	t, err := token.SignedString(key)
+	t, err := token.SignedString([]byte(hexKey))
 	if err != nil {
 		return "", err
 	}

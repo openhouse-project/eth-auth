@@ -24,5 +24,5 @@ func main() {
 	if os.Getenv("LOGGING") != "" {
 		conf.Logging = true
 	}
-	server.Listen(3000, conf)
+	server.Listen(3100, conf)
 }

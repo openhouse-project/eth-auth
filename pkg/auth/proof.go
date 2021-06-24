@@ -50,8 +50,7 @@ func NewChallenge(address string) (string, error) {
 	// add to pending list of challenges
 	db.Set(utils.EncodeString(address), &challenge, cache.DefaultExpiration)
 
-	message := challengeText + nonce
-	return message, nil
+	return nonce, nil
 }
 
 // VerifyChallenge is used to check the signature in the response and return the
@@ -79,7 +78,7 @@ func VerifyChallenge(address string, signature string) (string, error) {
 	}
 	sig[64] -= 27 // Transform yellow paper V from 27/28 to 0/1
 
-	msg := []byte(challengeText + challenge.Nonce)
+	msg := []byte(challenge.Nonce)
 	// Recover public key from signature
 	pubKey, err := crypto.SigToPub(signHash(msg), sig)
 	if err != nil {
